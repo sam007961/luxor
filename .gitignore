@@ -6,5 +6,10 @@ env/
 *.pyo
 *.pyd
 
+# setup tools
+dist/
+build/
+*.egg-info
+
 # editors
 .vscode/
