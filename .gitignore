@@ -1,0 +1,7 @@
+# virtual environment
+env/
+
+# python binaries
+*.pyc
+*.pyo
+*.pyd
