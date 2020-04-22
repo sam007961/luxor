@@ -23,7 +23,7 @@ class Context:
     def pop_event(self) -> Event:
         event = self.__events.pop(0)
         if event.action is not None:
-            event.action(self)
+            event.action(event)
         return event
 
     def add_object(self, obj: Object) -> None:

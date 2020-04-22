@@ -3,9 +3,14 @@ from luxor.core import Context
 from luxor.struct.types import Int
 
 ctx = Context()
-x = Int(0, 'x', ctx)
+x = Int(0, name='x', context=ctx)
 x.set(5)
 x.set(7)
 x.set(2)
+x.value = 3
+
+y = Int(0, name='y', context=ctx)
+y.set(x)
+y.value = x
 
 ctx.log()
