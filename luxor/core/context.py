@@ -1,7 +1,7 @@
 from typing import List
 from copy import copy
-from luxor.core.events import Event, EventHandler, EventInterceptor
-from luxor.core.objects import Object
+from .events import Event, EventHandler, EventInterceptor
+from .objects import Object
 
 
 class Context:
@@ -34,6 +34,9 @@ class Context:
         obj = Object()
         self.add_object(obj)
         return obj
+
+    def log(self):
+        print(*[str(e) for e in self.__events], sep='\n')
 
     def __run_interceptors(self, event: Event) -> None:
         return event

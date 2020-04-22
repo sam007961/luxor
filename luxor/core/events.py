@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import List, Dict, Any, Callable, NewType, TYPE_CHECKING
-from luxor.core.objects import Object
+from .objects import Object
 if TYPE_CHECKING:
     from .context import context
 
@@ -14,6 +14,9 @@ class Event:
         self.source = source
         self.meta = meta
         self.ctx = ctx
+
+    def __str__(self):
+        return '( ' + str(self.classes) + ', ' + str(self.meta) + ' )'
 
 
 class EventHandler:
