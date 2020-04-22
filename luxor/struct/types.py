@@ -4,6 +4,7 @@ from typing import Union
 from luxor.core.objects import Object
 from luxor.core.events import Event
 from luxor.core.context import Context
+from varname import varname
 
 
 class Var:
@@ -12,11 +13,14 @@ class Var:
 
 class Int:
     def __init__(self, value: int = 0, **kwargs) -> None:
-        self.name = kwargs['name']
-        self.ctx = kwargs['context']
+        if 'name' in kwargs:
+            self.name: str = kwargs['name']
+        else:
+            self.name: str = varname()
+        self.ctx: Context = kwargs['context']
         self.obj = self.ctx.request_object()
-        self.obj.value = value
-        self.__value = value
+        self.obj.value = copy(value)
+        self.__value = copy(value)
         self.event_prefix = 'Int.' + self.name + '.'
 
     def set(self, value: Union[int, Int]) -> None:
@@ -27,7 +31,7 @@ class Int:
             self.obj.value = copy(value)
 
         self.ctx.push_event(Event([self.event_prefix + 'set'],
-                            set_value, self, {
+                            set_value, self.obj, {
             'set.value.old': copy(self.__value),
             'set.value.new': copy(value)
         }))
@@ -44,5 +48,5 @@ class Int:
     @value.getter
     def value(self) -> int:
         self.ctx.push_event(Event([self.event_prefix + 'get'],
-                            None, self, {'get.value': copy(self.__value)}))
+                            None, self.obj, {'get.value': copy(self.__value)}))
         return self.__value
