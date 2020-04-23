@@ -1,9 +1,10 @@
 from __future__ import annotations
-from copy import copy
-from typing import List, Dict, Any, NewType, TYPE_CHECKING
+from typing import List, Dict, Union, NewType, TYPE_CHECKING
 from .events import Event
 if TYPE_CHECKING:
     from .context import context
+
+Immutable = Union[int, float, complex, str, tuple, frozenset, bytes]
 
 
 class Object:
@@ -11,21 +12,21 @@ class Object:
                  uid: int = None, ctx: Context = None) -> None:
         self.uid = uid
         self.__parent = None
-        self.__attributes: Dict[str, Any] = {}
+        self.__attributes: Dict[str, Immutable] = {}
         self.__children: List[Object] = []
         self.ctx = ctx
         # if parent is not None:
         #     self.parent = parent
 
-    def peek(self, name: str) -> Any:
+    def peek(self, name: str) -> Immutable:
         return self.__attributes[name]
 
-    def __getitem__(self, name: str) -> Any:
+    def __getitem__(self, name: str) -> Immutable:
         self._trigger_getattr(name)
         return self.__attributes[name]
 
-    def __setitem__(self, name: str, value: Any) -> None:
-        old = copy(self.__attributes.get(name))
+    def __setitem__(self, name: str, value: Immutable) -> None:
+        old = self.__attributes.get(name)
         self.__attributes[name] = value
         self._trigger_setattr(name, old, value)
 
@@ -39,21 +40,22 @@ class Object:
             self.__children.clear()
 
         self.ctx.push_event(Event('operation.new', self, {
-            'new.uid': copy(self.uid)
+            'new.uid': self.uid
         }, action=do_new))
 
-    def _trigger_setattr(self, name: str, old: Any, new: Any) -> None:
+    def _trigger_setattr(self, name: str,
+                         old: Immutable, new: Immutable) -> None:
         def do_set(event: Event) -> None:
             self.__attributes[name] = new
 
         self.ctx.push_event(Event('operation.attribute.set', self, {
-            'set.name': copy(name),
-            'set.value.old': copy(old),
-            'set.value.new': copy(new)
+            'set.name': name,
+            'set.value.old': old,
+            'set.value.new': new
         }, action=do_set))
 
     def _trigger_getattr(self, name: str) -> None:
         self.ctx.push_event(Event('operation.attribute.get', self, {
-            'get.name': copy(name),
-            'get.value': copy(self.__attributes[name])
+            'get.name': name,
+            'get.value': self.__attributes[name]
         }))

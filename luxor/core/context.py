@@ -6,6 +6,7 @@ from .objects import Object
 
 class Context:
     def __init__(self) -> None:
+        # TODO: TreeDict
         self.__stack = List[str]
         self.__events: List[Event] = []
         self.__event_handlers: List = []
@@ -17,7 +18,7 @@ class Context:
     def push_event(self, event: Event) -> None:
         event.ctx = self
         event.stack = copy(self.__stack)
-        event = self.__run_interceptors(copy(event))
+        event = self.__run_interceptors(event)
         if event is None:
             return
         self.__events.append(event)
@@ -34,7 +35,7 @@ class Context:
 
     def add_object(self, obj: Object) -> None:
         obj.ctx = self
-        obj.uid = copy(self.__uid_counter)
+        obj.uid = self.__uid_counter
         obj._trigger_new()
         self.__objects.append(obj)
         self.__uid_counter += 1

@@ -1,5 +1,4 @@
 from __future__ import annotations
-from copy import copy
 from typing import Union
 from luxor.core.objects import Object
 from luxor.core.events import Event
@@ -18,7 +17,7 @@ class Int:
             self.name = varname()
         self.ctx: Context = kwargs['context']
         self.obj = self.ctx.request_object()
-        self.obj['value'] = value
+        self.obj['value'] = value if type(value) == int else value.value
         self.event_prefix = 'int.' + self.name + '.'
         self._trigger_new(value)
 
@@ -31,7 +30,7 @@ class Int:
         self._trigger_set(old, value)
 
     def get(self) -> int:
-        value = copy(self.obj['value'])
+        value = self.obj['value']
         self._trigger_get(value)
         return value
 
@@ -50,18 +49,18 @@ class Int:
     def _trigger_new(self, value) -> None:
         self.ctx.push_event(Event(self.event_prefix + 'new',
                             self.obj, {
-                                'new.value': copy(value)
+                                'new.value': value
                             }))
 
     def _trigger_set(self, old: int, new: int) -> None:
         self.ctx.push_event(Event(self.event_prefix + 'set',
                             self.obj, {
-                                'set.value.old': copy(old),
-                                'set.value.new': copy(new)
+                                'set.value.old': old,
+                                'set.value.new': new
                             }))
 
     def _trigger_get(self, value) -> None:
         self.ctx.push_event(Event(self.event_prefix + 'get',
                             self.obj, {
-                                'get.value': copy(value)
+                                'get.value': value
                             }))
