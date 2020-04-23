@@ -14,3 +14,7 @@ y.set(x)
 y.value = x
 
 ctx.log()
+
+while(ctx.has_events()):
+    ctx.pop_event()
+

@@ -6,17 +6,20 @@ from .objects import Object
 
 class Context:
     def __init__(self) -> None:
+        self.__stack = List[str]
         self.__events: List[Event] = []
         self.__event_handlers: List = []
         self.__event_interceptors: List = []
 
         self.__objects: List[Object] = []
+        self.__uid_counter = 0
 
     def push_event(self, event: Event) -> None:
+        event.ctx = self
+        event.stack = copy(self.__stack)
         event = self.__run_interceptors(copy(event))
         if event is None:
             return
-        event.ctx = self
         self.__events.append(event)
         self.__run_handlers(copy(event))
 
@@ -26,9 +29,15 @@ class Context:
             event.action(event)
         return event
 
+    def has_events(self) -> bool:
+        return len(self.__events) > 0
+
     def add_object(self, obj: Object) -> None:
         obj.ctx = self
+        obj.uid = copy(self.__uid_counter)
+        obj._trigger_new()
         self.__objects.append(obj)
+        self.__uid_counter += 1
 
     def request_object(self) -> Object:
         obj = Object()
