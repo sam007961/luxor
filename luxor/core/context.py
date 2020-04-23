@@ -39,6 +39,9 @@ class Context:
         self.__objects.append(obj)
         self.__uid_counter += 1
 
+    def get_object(self, uid: int) -> Object:
+        return self.__objects[uid] if uid < len(self.__objects) else None
+
     def request_object(self) -> Object:
         obj = Object()
         self.add_object(obj)

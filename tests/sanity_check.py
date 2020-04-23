@@ -15,6 +15,7 @@ y.value = x
 
 ctx.log()
 
-while(ctx.has_events()):
+for _ in range(11):
     ctx.pop_event()
 
+print(ctx.get_object(0).peek('value'))

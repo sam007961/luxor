@@ -13,7 +13,9 @@ class Var:
 
 class Int:
     def __init__(self, value: int = 0, **kwargs) -> None:
-        self.name: str = kwargs.get('name', varname())
+        self.name: str = kwargs.get('name')
+        if self.name is None:
+            self.name = varname()
         self.ctx: Context = kwargs['context']
         self.obj = self.ctx.request_object()
         self.obj['value'] = value
