@@ -19,15 +19,18 @@ class Object:
         #     self.parent = parent
 
     def peek(self, name: str) -> Immutable:
-        return self.__attributes[name]
+        return self.__attributes.get(name)
+
+    def place(self, name: str, value: Immutable) -> None:
+        self.__attributes[name] = value
 
     def __getitem__(self, name: str) -> Immutable:
         self._trigger_getattr(name)
-        return self.__attributes[name]
+        return self.peek(name)
 
     def __setitem__(self, name: str, value: Immutable) -> None:
-        old = self.__attributes.get(name)
-        self.__attributes[name] = value
+        old = self.peek(name)
+        self.place(name, value)
         self._trigger_setattr(name, old, value)
 
     def __eq__(self, value: Object):
@@ -39,23 +42,26 @@ class Object:
             self.__attributes.clear()
             self.__children.clear()
 
-        self.ctx.push_event(Event('operation.new', self, {
-            'new.uid': self.uid
-        }, action=do_new))
+        self.ctx.push_event(Event('operation.new',
+                            source=self, meta={
+                                'new.uid': self.uid
+                            }, action=do_new))
+
+    def _trigger_getattr(self, name: str) -> None:
+        self.ctx.push_event(Event('operation.attribute.get',
+                            source=self, meta={
+                                'get.name': name,
+                                'get.value': self.__attributes[name]
+                            }))
 
     def _trigger_setattr(self, name: str,
                          old: Immutable, new: Immutable) -> None:
         def do_set(event: Event) -> None:
             self.__attributes[name] = new
 
-        self.ctx.push_event(Event('operation.attribute.set', self, {
-            'set.name': name,
-            'set.value.old': old,
-            'set.value.new': new
-        }, action=do_set))
-
-    def _trigger_getattr(self, name: str) -> None:
-        self.ctx.push_event(Event('operation.attribute.get', self, {
-            'get.name': name,
-            'get.value': self.__attributes[name]
-        }))
+        self.ctx.push_event(Event('operation.attribute.set',
+                            source=self, meta={
+                                'set.name': name,
+                                'set.value.old': old,
+                                'set.value.new': new
+                            }, action=do_set))

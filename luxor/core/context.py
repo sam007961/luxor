@@ -1,6 +1,6 @@
 from typing import List
 from copy import copy
-from .events import Event, EventHandler, EventInterceptor
+from .events import Event, EventInterceptor
 from .objects import Object
 
 
@@ -9,8 +9,8 @@ class Context:
         # TODO: TreeDict
         self.__stack = List[str]
         self.__events: List[Event] = []
-        self.__event_handlers: List = []
-        self.__event_interceptors: List = []
+        self.__event_pre_interceptors: List[EventInterceptor] = []
+        self.__event_post_interceptors: List[EventInterceptor] = []
 
         self.__objects: List[Object] = []
         self.__uid_counter = 0
@@ -18,11 +18,11 @@ class Context:
     def push_event(self, event: Event) -> None:
         event.ctx = self
         event.stack = copy(self.__stack)
-        event = self.__run_interceptors(event)
+        event = self.__run_pre_interceptors(event)
         if event is None:
             return
         self.__events.append(event)
-        self.__run_handlers(copy(event))
+        self.__run_post_interceptors(copy(event))
 
     def pop_event(self) -> Event:
         event = self.__events.pop(0)
@@ -51,8 +51,8 @@ class Context:
     def log(self):
         print(*[str(e) for e in self.__events], sep='\n')
 
-    def __run_interceptors(self, event: Event) -> None:
+    def __run_pre_interceptors(self, event: Event) -> None:
         return event
 
-    def __run_handlers(self, event: Event) -> None:
+    def __run_post_interceptors(self, event: Event) -> None:
         pass

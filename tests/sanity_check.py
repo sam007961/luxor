@@ -1,11 +1,11 @@
 import pathmagic  # noqa
 from luxor.core import Context
-from luxor.struct.types import Int
+from luxor.controllers.types import Int
 
 ctx = Context()
 x = Int(0, context=ctx)
 x.set(5)
-x.set(7)
+x.set(7.0)
 x.set(2)
 x.value = 3
 
