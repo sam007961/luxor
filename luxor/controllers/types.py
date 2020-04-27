@@ -27,7 +27,7 @@ class Int:
     def peek(self) -> int:
         return self.obj.peek('value')
 
-    def place(self, value: Union[int, float, Int]) -> (int, int):
+    def place(self, value: Numeric) -> (int, int):
         if type(value) == Int:
             new = value.get()
         else:
@@ -41,7 +41,7 @@ class Int:
         self.trigger_get(value)
         return value
 
-    def set(self, value: Union[int, float, Int]) -> None:
+    def set(self, value: Numeric) -> None:
         old, new = self.place(value)
         if self.autoevent:
             if type(value) == float:
@@ -57,7 +57,7 @@ class Int:
         return self.get()
 
     @value.setter
-    def value(self, value: Union[int, Int]) -> None:
+    def value(self, value: Numeric) -> None:
         self.set(value)
 
     def trigger_new(self, value) -> None:
@@ -86,3 +86,6 @@ class Int:
                                 'cast.value.old': old,
                                 'cast.value.new': new
                             }))
+
+
+Numeric = Union[int, float, Int]

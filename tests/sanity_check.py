@@ -13,6 +13,9 @@ y = Int(0, context=ctx)
 y.set(x)
 y.value = x
 
+x.obj.insert_child(0, y.obj)
+y.obj.set_parent(x.obj)
+
 ctx.log()
 
 for _ in range(7):

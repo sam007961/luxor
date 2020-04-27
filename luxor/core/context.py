@@ -7,7 +7,7 @@ from .objects import Object
 class Context:
     def __init__(self) -> None:
         # TODO: TreeDict
-        self.__stack = List[str]
+        self.__stack: List[str] = []
         self.__events: List[Event] = []
         self.__event_pre_interceptors: List[EventInterceptor] = []
         self.__event_post_interceptors: List[EventInterceptor] = []
@@ -17,12 +17,12 @@ class Context:
 
     def push_event(self, event: Event) -> None:
         event.ctx = self
-        event.stack = copy(self.__stack)
+        event.stack = tuple(self.__stack)
         event = self.__run_pre_interceptors(event)
         if event is None:
             return
         self.__events.append(event)
-        self.__run_post_interceptors(copy(event))
+        self.__run_post_interceptors(event)
 
     def pop_event(self) -> Event:
         event = self.__events.pop(0)
@@ -36,15 +36,15 @@ class Context:
     def add_object(self, obj: Object) -> None:
         obj.ctx = self
         obj.uid = self.__uid_counter
-        obj._trigger_new()
         self.__objects.append(obj)
         self.__uid_counter += 1
+        obj._trigger_new()
 
     def get_object(self, uid: int) -> Object:
         return self.__objects[uid] if uid < len(self.__objects) else None
 
-    def request_object(self) -> Object:
-        obj = Object()
+    def request_object(self, **kwargs) -> Object:
+        obj = Object(kwargs.get('parent'))
         self.add_object(obj)
         return obj
 
