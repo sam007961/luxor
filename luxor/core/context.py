@@ -30,8 +30,16 @@ class Context:
             event.action(event)
         return event
 
+    @property
+    def events_count(self) -> int:
+        return len(self.__events)
+
+    @property
     def has_events(self) -> bool:
-        return len(self.__events) > 0
+        return self.events_count > 0
+
+    def peek_event(self, index: int) -> Event:
+        return self.__events[index] if index < self.events_count else None
 
     def add_object(self, obj: Object) -> None:
         obj.ctx = self
@@ -40,7 +48,7 @@ class Context:
         self.__uid_counter += 1
         obj._trigger_new()
 
-    def get_object(self, uid: int) -> Object:
+    def peek_object(self, uid: int) -> Object:
         return self.__objects[uid] if uid < len(self.__objects) else None
 
     def request_object(self, **kwargs) -> Object:

@@ -21,4 +21,4 @@ ctx.log()
 for _ in range(7):
     ctx.pop_event()
 
-print(ctx.get_object(0).peek('value'))
+print(ctx.peek_object(0).peek('value'))

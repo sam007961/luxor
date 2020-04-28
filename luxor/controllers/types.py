@@ -7,22 +7,26 @@ from varname import varname
 
 
 class Var:
-    pass
-
-
-class Int:
-    def __init__(self, value: int = 0, **kwargs) -> None:
+    def __init__(self, **kwargs):
         self.name: str = kwargs.get('name')
         if self.name is None:
-            self.name = varname()
+            self.name = varname(kwargs.get('caller', 2))
         self.ctx: Context = kwargs['context']
-        self.autoevent: bool = kwargs.get('autoevent', True)
-        self.autokey: bool = kwargs.get('autokey', True)
+        self.autotrigger: bool = kwargs.get('autotrigger', True)
+
+    def auto_trigger(self, name: str, *args) -> None:
+        if self.auto_trigger:
+            getattr(self, 'trigger_' + name)(*args)
+
+
+class Int(Var):
+    def __init__(self, value: Numeric = 0, **kwargs) -> None:
+        super(Int, self).__init__(**kwargs)
+        self.event_prefix = self.name + '.int.'
         self.obj = self.ctx.request_object()
-        self.event_prefix = 'int.' + self.name + '.'
+        self.obj['class'] = ('int')
         self.place(value)
-        if self.autoevent:
-            self.trigger_new(value)
+        self.auto_trigger('new', value)
 
     def peek(self) -> int:
         return self.obj.peek('value')
@@ -43,10 +47,9 @@ class Int:
 
     def set(self, value: Numeric) -> None:
         old, new = self.place(value)
-        if self.autoevent:
-            if type(value) == float:
-                self.trigger_cast_other(value, new)
-            self.trigger_set(old, new)
+        if type(value) == float:
+            self.auto_trigger('cast_other', value, new)
+        self.auto_trigger('set', old, new)
 
     @property
     def value(self) -> int:

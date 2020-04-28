@@ -18,14 +18,18 @@ class Object:
     def peek(self, name: str) -> EventSafe:
         return self.__attributes.get(name)
 
-    def place(self, name: str, value: EventSafe) -> None:
+    def place(self, name: str, value: EventSafe) -> EventSafe:
+        old = self.peek(name)
         self.__attributes[name] = value
+        return old
 
     def peek_parent(self) -> Object:
         return self.__parent
 
-    def place_parent(self, parent: Object) -> None:
+    def place_parent(self, parent: Object) -> Object:
+        old = self.peek_parent()
         self.__parent = parent
+        return old
 
     def peek_child(self, index: int) -> Object:
         return self.__children[index]
@@ -42,8 +46,7 @@ class Object:
         return value
 
     def __setitem__(self, name: str, value: EventSafe) -> None:
-        old = self.peek(name)
-        self.place(name, value)
+        old = self.place(name, value)
         self._trigger_setattr(name, old, value)
 
     def get_parent(self) -> Object:
@@ -52,8 +55,7 @@ class Object:
         return parent
 
     def set_parent(self, parent: Object) -> None:
-        old = self.peek_parent()
-        self.place_parent(parent)
+        old = self.place_parent(parent)
         self._trigger_setparent(old, parent)
 
     def get_child(self, index: int) -> Object:
