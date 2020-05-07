@@ -10,7 +10,7 @@ class Var:
     def __init__(self, **kwargs):
         self.name: str = kwargs.get('name')
         if self.name is None:
-            self.name = varname(kwargs.get('caller', 2))
+            self.name = varname(2)
         self.ctx: Context = kwargs['context']
         self.autotrigger: bool = kwargs.get('autotrigger', True)
 
@@ -42,13 +42,13 @@ class Int(Var):
 
     def get(self) -> int:
         value = self.obj['value']
-        self.trigger_get(value)
+        self.auto_trigger('get', value)
         return value
 
     def set(self, value: Numeric) -> None:
         old, new = self.place(value)
         if type(value) == float:
-            self.auto_trigger('cast_other', value, new)
+            self.auto_trigger('cast_literal', value, new)
         self.auto_trigger('set', old, new)
 
     @property
@@ -82,8 +82,8 @@ class Int(Var):
                                 'set.value.new': new
                             }))
 
-    def trigger_cast_other(self, old: float, new: int) -> None:
-        self.ctx.push_event(Event(self.event_prefix + 'other.cast',
+    def trigger_cast_literal(self, old: float, new: int) -> None:
+        self.ctx.push_event(Event(self.event_prefix + 'literal.cast',
                             source=self.obj, meta={
                                 'cast.value.type': type(old),
                                 'cast.value.old': old,
