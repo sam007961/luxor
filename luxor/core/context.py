@@ -1,6 +1,6 @@
 from typing import List
 from copy import copy
-from .events import Event, EventInterceptor, match
+from .events import Event, match, EventWrapper, EventInterceptor
 from .objects import Object
 
 
@@ -17,9 +17,15 @@ class Context:
     def push_event(self, event: Event) -> None:
         event.ctx = self
         event.stack = tuple(self.__stack)
-        if event.action is not None:
-            event.action(event)
-        self.__events.append(event)
+        wrapper = self.__intercept(event)
+        if not wrapper.canceled:
+            for e in wrapper.prev_chain:
+                self.push_event(e)
+            if wrapper.event.action is not None:
+                wrapper.event.action(wrapper.event)
+            self.__events.append(wrapper.event)
+            for e in wrapper.next_chain:
+                self.push_event(e)
 
     def pop_event(self) -> Event:
         event = self.__events.pop(0)
@@ -58,5 +64,10 @@ class Context:
               if kwargs.get('show_operations', False)
               or not match(e, 'operation.*')], sep='\n')
 
-    def __run_pre_interceptors(self, event: Event) -> None:
-        return event
+    def __intercept(self, event: Event) -> EventWrapper:
+        wrapper = EventWrapper(event)
+        for i in self.__interceptors:
+            i.intercept(wrapper)
+            if wrapper.canceled:
+                break
+        return wrapper
