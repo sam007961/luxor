@@ -2,21 +2,7 @@ from __future__ import annotations
 from typing import Union
 from luxor.core.objects import Object
 from luxor.core.events import Event
-from luxor.core.context import Context
-from varname import varname
-
-
-class Var:
-    def __init__(self, **kwargs):
-        self.name: str = kwargs.get('name')
-        if self.name is None:
-            self.name = varname(2)
-        self.ctx: Context = kwargs['context']
-        self.autotrigger: bool = kwargs.get('autotrigger', True)
-
-    def auto_trigger(self, name: str, *args) -> None:
-        if self.auto_trigger:
-            getattr(self, 'trigger_' + name)(*args)
+from luxor.controllers.expressions import Var
 
 
 class Int(Var):
