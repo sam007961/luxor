@@ -3,12 +3,14 @@ from luxor.core import Context
 from luxor.controllers.types import Int
 
 ctx = Context()
+ctx.push_stack('test')
 x = Int(0, context=ctx)
 x.set(5)
 x.set(7.0)
 x.set(2)
 x.value = 3
 
+ctx.push_stack('deep')
 y = Int(0, context=ctx)
 y.set(x)
 y.value = x

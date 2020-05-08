@@ -10,11 +10,12 @@ class Ref(Enum):
 
 class Var:
     def __init__(self, **kwargs):
+        self.ctx: Context = kwargs['context']
         self.ref = kwargs.get('ref', Ref.lvalue)
         self.name: str = kwargs.get('name')
         if self.ref == Ref.lvalue and self.name is None:
-            self.name = varname(2)
-        self.ctx: Context = kwargs['context']
+            self.name = varname(2)  # variable declared 2 levels above
+        self.name = '.'.join(self.ctx.stack + (self.name,))
         self.autotrigger: bool = kwargs.get('autotrigger', True)
 
     def auto_trigger(self, name: str, *args) -> None:
