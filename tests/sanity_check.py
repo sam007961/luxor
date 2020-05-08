@@ -17,8 +17,12 @@ x.obj.insert_child(0, y.obj)
 y.obj.set_parent(x.obj)
 
 ctx.log()
+# ctx.log(show_operations=True)
 
-for _ in range(7):
+# for _ in range(7):
+#     ctx.pop_event()
+
+while ctx.has_events:
     ctx.pop_event()
 
-print(ctx.peek_object(0).peek('value'))
+print(ctx.peek_object(0).sget('value'))

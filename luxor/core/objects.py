@@ -13,132 +13,101 @@ class Object:
         self.__attributes: Dict[str, EventSafe] = {}
         self.__children: List[Object] = []
         self.ctx = ctx
-        self.place_parent(parent)
+        self.sset_parent(parent)
 
-    def peek(self, name: str) -> EventSafe:
+    def sget(self, name: str) -> EventSafe:
         return self.__attributes.get(name)
 
-    def place(self, name: str, value: EventSafe) -> EventSafe:
-        old = self.peek(name)
+    def sset(self, name: str, value: EventSafe) -> None:
         self.__attributes[name] = value
-        return old
 
-    def peek_parent(self) -> Object:
+    def sget_parent(self) -> Object:
         return self.__parent
 
-    def place_parent(self, parent: Object) -> Object:
-        old = self.peek_parent()
+    def sset_parent(self, parent: Object) -> None:
         self.__parent = parent
-        return old
 
-    def peek_child(self, index: int) -> Object:
+    def sget_child(self, index: int) -> Object:
         return self.__children[index]
 
-    def place_child(self, index: int, child: Object) -> None:
+    def sinsert_child(self, index: int, child: Object) -> None:
         self.__children.insert(index, child)
 
-    def pop_child(self, index: int) -> Object:
+    def sremove_child(self, index: int) -> Object:
         return self.__children.pop(index)
 
     def __getitem__(self, name: str) -> EventSafe:
-        value = self.peek(name)
-        self._trigger_getattr(name, value)
+        value = self.sget(name)
+        self._trigger_getattr()
         return value
 
     def __setitem__(self, name: str, value: EventSafe) -> None:
-        old = self.place(name, value)
-        self._trigger_setattr(name, old, value)
+        self._trigger_setattr(name, value)
+
+    def get(self, name: str) -> EventSafe:
+        return self[name]
+
+    def set(self, name: str, value: EventSafe) -> None:
+        self[name] = value
 
     def get_parent(self) -> Object:
-        parent = self.peek_parent()
-        self._trigger_getparent(parent)
+        parent = self.sget_parent()
+        self._trigger_getparent()
         return parent
 
     def set_parent(self, parent: Object) -> None:
-        old = self.place_parent(parent)
-        self._trigger_setparent(old, parent)
+        self._trigger_setparent(parent)
 
     def get_child(self, index: int) -> Object:
-        child = self.peek_child(index)
+        child = self.sget_child(index)
         self._trigger_getchild(index, child)
         return child
 
     def insert_child(self, index: int, child: Object) -> None:
-        self.place_child(index, child)
         self._trigger_insertchild(index, child)
 
     def remove_child(self, index) -> Object:
-        child = self.pop_child(index)
-        self._trigger_removechild(index, child)
+        child = self.sget_child(index)
+        self._trigger_removechild(index)
         return child
 
     def __eq__(self, value: Object):
         return self.uid == value.uid
 
     def _trigger_new(self) -> None:
-        parent = self.peek_parent()
+        parent = self.sget_parent()
 
         def do_new(event: Event) -> None:
             self.parent = parent
             self.__attributes.clear()
             self.__children.clear()
 
-        self.ctx.push_event(Event('operation.new',
-                            source=self, meta={
-                                'new.uid': self.uid,
-                                'new.parent': parent
-                            }, action=do_new))
+        self.ctx.push_event(Event('operation.new', source=self, action=do_new))
 
-    def _trigger_getattr(self, name: str, value: EventSafe) -> None:
-        self.ctx.push_event(Event('operation.attribute.get',
-                            source=self, meta={
-                                'get.name': name,
-                                'get.value': value
-                            }))
+    def _trigger_getattr(self) -> None:
+        self.ctx.push_event(Event('operation.attribute.get', source=self))
 
-    def _trigger_setattr(self, name: str,
-                         old: EventSafe, new: EventSafe) -> None:
-        self.ctx.push_event(Event('operation.attribute.set',
-                            source=self, meta={
-                                'set.name': name,
-                                'set.value.old': old,
-                                'set.value.new': new
-                            }, action=lambda e: self.place(name, new)))
+    def _trigger_setattr(self, name: str, new: EventSafe) -> None:
+        self.ctx.push_event(Event('operation.attribute.set', source=self,
+                            action=lambda e: self.sset(name, new)))
 
-    def _trigger_getparent(self, parent: Object) -> None:
-        self.ctx.push_event(Event('operation.parent.get',
-                            source=self, meta={
-                                'get.value': parent
-                            }))
+    def _trigger_getparent(self) -> None:
+        self.ctx.push_event(Event('operation.parent.get', source=self))
 
-    def _trigger_setparent(self, old: Object, new: Object) -> None:
-        self.ctx.push_event(Event('operation.parent.set',
-                            source=self, meta={
-                                'set.old': old,
-                                'set.new': new
-                            }, action=lambda e: self.place_parent(new)))
+    def _trigger_setparent(self, new: Object) -> None:
+        self.ctx.push_event(Event('operation.parent.set', source=self,
+                            action=lambda e: self.sset_parent(new)))
 
     def _trigger_getchild(self, index: int, child: Object) -> None:
-        self.ctx.push_event(Event('operation.child.get',
-                            source=self, meta={
-                                'get.index': index,
-                                'get.value': child
-                            }))
+        self.ctx.push_event(Event('operation.child.get', source=self))
 
     def _trigger_insertchild(self, index: int, child: Object) -> None:
-        self.ctx.push_event(Event('operation.child.insert',
-                            source=self, meta={
-                                'insert.index': index,
-                                'insert.value': child
-                            },
-                            action=lambda e: self.place_child(index, child)))
+        self.ctx.push_event(Event('operation.child.insert', source=self,
+                            action=lambda e: self.sinsert_child(index, child)))
 
-    def _trigger_removechild(self, index: int, child: Object) -> None:
-        self.ctx.push_event(Event('operation.child.remove',
-                            source=self, meta={
-                                'remove.index': index,
-                                'remove.value': child
-                            }, action=lambda e: self.pop_child(index)))
+    def _trigger_removechild(self, index: int) -> None:
+        self.ctx.push_event(Event('operation.child.remove', source=self,
+                            action=lambda e: self.sremove_child(index)))
 
     def __str__(self):
         return '{ uid: ' + str(self.uid) + ' }'

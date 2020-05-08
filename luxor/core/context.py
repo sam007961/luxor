@@ -1,6 +1,6 @@
 from typing import List
 from copy import copy
-from .events import Event, EventInterceptor
+from .events import Event, EventInterceptor, match
 from .objects import Object
 
 
@@ -9,8 +9,7 @@ class Context:
         # TODO: TreeDict
         self.__stack: List[str] = []
         self.__events: List[Event] = []
-        self.__event_pre_interceptors: List[EventInterceptor] = []
-        self.__event_post_interceptors: List[EventInterceptor] = []
+        self.__interceptors: List[EventInterceptor] = []
 
         self.__objects: List[Object] = []
         self.__uid_counter = 0
@@ -18,15 +17,13 @@ class Context:
     def push_event(self, event: Event) -> None:
         event.ctx = self
         event.stack = tuple(self.__stack)
-        event = self.__run_pre_interceptors(event)
-        if event is None:
-            return
+        if event.action is not None:
+            event.action(event)
         self.__events.append(event)
-        self.__run_post_interceptors(event)
 
     def pop_event(self) -> Event:
         event = self.__events.pop(0)
-        if event.action is not None:
+        if event.action is not None and match(event, 'operation.*'):
             event.action(event)
         return event
 
@@ -56,11 +53,10 @@ class Context:
         self.add_object(obj)
         return obj
 
-    def log(self):
-        print(*[str(e) for e in self.__events], sep='\n')
+    def log(self, **kwargs):
+        print(*[str(e) for e in self.__events
+              if kwargs.get('show_operations', False)
+              or not match(e, 'operation.*')], sep='\n')
 
     def __run_pre_interceptors(self, event: Event) -> None:
         return event
-
-    def __run_post_interceptors(self, event: Event) -> None:
-        pass

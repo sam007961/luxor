@@ -25,18 +25,18 @@ class Int(Var):
         self.event_prefix = self.name + '.int.'
         self.obj = self.ctx.request_object()
         self.obj['class'] = ('int')
-        self.place(value)
+        self.sset(value)
         self.auto_trigger('new', value)
 
-    def peek(self) -> int:
-        return self.obj.peek('value')
+    def sget(self) -> int:
+        return self.obj.sget('value')
 
-    def place(self, value: Numeric) -> (int, int):
+    def sset(self, value: Numeric) -> (int, int):
         if type(value) == Int:
             new = value.get()
         else:
             new = int(value)
-        old = self.peek()
+        old = self.sget()
         self.obj['value'] = new
         return old, new
 
@@ -46,7 +46,7 @@ class Int(Var):
         return value
 
     def set(self, value: Numeric) -> None:
-        old, new = self.place(value)
+        old, new = self.sset(value)
         if type(value) == float:
             self.auto_trigger('cast_literal', value, new)
         self.auto_trigger('set', old, new)
