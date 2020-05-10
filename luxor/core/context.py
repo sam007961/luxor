@@ -1,18 +1,20 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 from copy import copy
 from .events import Event, match, EventWrapper, EventInterceptor
 from .objects import Object
+from .treedict import TreeDict
 
 
 class Context:
     def __init__(self) -> None:
-        # TODO: TreeDict
         self.__stack: List[Tuple[str, int]] = []
         self.__events: List[Event] = []
         self.__interceptors: List[EventInterceptor] = []
 
         self.__objects: List[Object] = []
         self.__uid_counter = 0
+
+        self.__properties = TreeDict()
 
     def push_event(self, event: Event) -> None:
         event.ctx = self

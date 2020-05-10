@@ -1,6 +1,7 @@
 import pathmagic  # noqa
 from luxor.core import Context
 from luxor.controllers.types import Int
+from luxor.core.treedict import TreeDict
 
 ctx = Context()
 ctx.push_stack('test')
@@ -28,3 +29,9 @@ while ctx.has_events:
     ctx.pop_event()
 
 print(ctx.peek_object(0).sget('value'))
+
+d = TreeDict()
+d['int.background-color'] = '#123123'
+
+print(d.extract())
+print(d['int.background-color'])
