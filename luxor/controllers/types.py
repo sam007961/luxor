@@ -10,7 +10,8 @@ class Int(Var):
         super(Int, self).__init__(**kwargs)
         self.event_prefix = self.name + '.int.'
         self.obj = self.ctx.request_object()
-        self.obj['class'] = ('int')
+        self.obj['class'] = ('int', self.stack + '.int')
+        self.obj['label'] = self.name
         self.sset(value)
         self.auto_trigger('new', value)
 

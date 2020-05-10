@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import List, Union, Dict
 from luxor.core.objects import Object
+from luxor.core.events import Event
 from luxor.scene.style import PropertyValue
 
 
@@ -18,9 +19,10 @@ class Element:
 
 
 class Template:
-    def __init__(self, src: str, obj: Object) -> None:
+    def __init__(self, src: str, obj: Object, event: Event) -> None:
         self.graph = None
         self.obj = obj
+        self.event = event
 
 
 NodeData = Union[str, Element, Template]
