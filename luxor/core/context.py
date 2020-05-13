@@ -64,15 +64,17 @@ class Context:
 
     def push_stack(self, name: str) -> None:
         if len(self.__stack) > 0 and self.__stack[-1][0] == name:
-            self.__stack[-1] = (name, self.__stack[-1][1] + 1)
+            top_name, top_count = self.__stack[-1]
+            self.__stack[-1] = (top_name, top_count + 1)
         else:
             self.__stack.append((name, 0))
 
     def pop_stack(self) -> None:
         if len(self.__stack) == 0:
             return
-        if self.__stack[-1][1] > 0:
-            self.__stack[-1][0] = (self.stack[-1][0], self.stack[-1][1] - 1)
+        top_name, top_count = self.__stack[-1]
+        if top_count > 0:
+            self.__stack[-1] = (top_name, top_count - 1)
         else:
             self.__stack.pop()
 

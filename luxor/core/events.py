@@ -22,9 +22,10 @@ class Event:
 
 
 def match(event: Event, pattern: str) -> bool:
-    pattern.replace('.', '\\.')
+    pattern = pattern.replace('.', '\\.')
+    pattern = pattern.replace('*', '.*')
     for cls in event.classes:
-        if re.compile(pattern).match(cls) is not None:
+        if re.compile(pattern).search(cls) is not None:
             return True
     return False
 
