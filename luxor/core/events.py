@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import List, Set, Tuple, Dict, Any, Union, Callable, TYPE_CHECKING
 from luxor.core.match import build_pattern, match
 if TYPE_CHECKING:

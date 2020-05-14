@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import List, Dict, Union, NewType, TYPE_CHECKING
+from typing import List, Dict, Union, TYPE_CHECKING
 from .events import Event
 if TYPE_CHECKING:
-    from .context import context
+    from .context import Context
 
 
 class Object:
