@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import List, Set, Tuple, Dict, Any, Union, Callable, TYPE_CHECKING
-import re
+from luxor.core.match import build_pattern, match
 if TYPE_CHECKING:
-    from .context import context
+    from .context import Context
     from .objects import Object
 
 
@@ -21,11 +21,11 @@ class Event:
             str(self.classes) + ', ' + str(self.meta) + ' )'
 
 
-def match(event: Event, pattern: str) -> bool:
-    pattern = pattern.replace('.', '\\.')
-    pattern = pattern.replace('*', '.*')
+@match.register
+def match_event(event: Event, pattern: str) -> bool:
+    pat = build_pattern(pattern)
     for cls in event.classes:
-        if re.compile(pattern).search(cls) is not None:
+        if pat.search(cls) is not None:
             return True
     return False
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Union
-from luxor.core.objects import Object
 from luxor.core.events import Event
 from luxor.controllers.expressions import Var
 
