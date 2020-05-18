@@ -1,6 +1,7 @@
 from enum import Enum
 from varname import varname
 from luxor.core.context import Context
+from luxor.utils.threads import thread_id
 
 
 class Ref(Enum):
@@ -11,14 +12,18 @@ class Ref(Enum):
 class Var:
     def __init__(self, **kwargs):
         self.ctx: Context = kwargs['context']
-        self.ref = kwargs.get('ref', Ref.lvalue)
+        self.ref: Ref = kwargs.get('ref', Ref.lvalue)
         self.name: str = kwargs.get('name')
-        self.stack = '.'.join(self.ctx.stack)
         if self.ref == Ref.lvalue and self.name is None:
-            self.name = varname(2)  # variable declared 2 levels above
-        self.name = self.stack + '.' + self.name
+            self.name = varname(2)  # variable declared 2 frames above
+        self.tid = thread_id()
+        self.callstack: str = \
+            self.ctx[str(self.tid) + '.callstack'].format()
+        self.name = str(self.tid) + '.' + \
+            self.callstack + '.' + self.name
         self.autotrigger: bool = kwargs.get('autotrigger', True)
 
-    def auto_trigger(self, name: str, *args) -> None:
-        if self.auto_trigger:
-            getattr(self, 'trigger_' + name)(*args)
+    def trigger(self, name: str, *args) -> None:
+        if self.autotrigger:
+            event = getattr(self, 'trigger_' + name)(*args)
+            self.ctx.push_event(event)

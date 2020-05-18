@@ -1,8 +1,9 @@
-from typing import List, Set, Tuple, Dict, Any, Union, Callable, TYPE_CHECKING
+from __future__ import annotations
+from typing import List, Set, Dict, Any, Union, Callable, TYPE_CHECKING
 from luxor.core.match import build_pattern, match
 if TYPE_CHECKING:
-    from .context import Context
-    from .objects import Object
+    from luxor.core.objects import Object
+    from luxor.core.context import Context
 
 
 class Event:
@@ -11,9 +12,7 @@ class Event:
             else {classes} if type(classes) == str else set(classes)
         self.source: Object = kwargs.get('source')
         self.meta: Dict[str, Any] = kwargs.get('meta', {})
-        self.action: Callable[Context, None] = kwargs.get('action')
-        self.stack: Tuple[str, ...] = None
-        self.ctx: Context = None
+        self.action: Callable[[Event], None] = kwargs.get('action')
 
     def __str__(self):
         return str(self.source) + ' -> ( ' + \
@@ -30,13 +29,14 @@ def match_event(event: Event, pattern: str) -> bool:
 
 
 class EventWrapper:
-    def __init__(self, event: Event) -> None:
-        self.__event = event
+    def __init__(self, ctx: Context, event: Event) -> None:
+        self.ctx = ctx
+        self.event = event
         self.prev_chain: List[Event] = []
         self.next_chain: List[Event] = []
 
     def match(self, pattern: str) -> bool:
-        return match(self.__event, pattern)
+        return match(self.event, pattern)
 
     def prepend(self, event: Event) -> None:
         self.prev_chain.append(event)
@@ -45,35 +45,41 @@ class EventWrapper:
         self.next_chain.append(event)
 
     def extend(self, **kwargs) -> None:
-        self.__event.classes.update(kwargs.get('classes', {}))
-        self.__event.meta.update(kwargs.get('meta', {}))
+        self.event.classes.update(kwargs.get('classes', {}))
+        self.event.meta.update(kwargs.get('meta', {}))
 
         ext = kwargs.get('action')
         if ext is not None:
-            action = self.__event.action
+            action = self.event.action
 
             def extended_action(event: Event):
                 action(event)
                 ext(event)
-            self.__event.action = extended_action
+            self.event.action = extended_action
 
     def override(self, **kwargs) -> None:
-        self.__event.classes = kwargs.get('classes', self.__event.classes)
-        self.__event.meta = kwargs.get('meta', self.__event.meta)
-        self.__event.action = kwargs.get('action', self.__event.action)
+        self.event.classes = kwargs.get('classes', self.event.classes)
+        self.event.meta = kwargs.get('meta', self.event.meta)
+        self.event.action = kwargs.get('action', self.event.action)
 
     def cancel(self) -> None:
-        self.__event = None
+        self.event = None
 
     @property
     def canceled(self) -> bool:
-        return self.__event is None
+        return self.event is None
 
     @property
-    def event(self) -> Event:
-        return self.__event
+    def source(self) -> Object:
+        return self.event.source
 
 
 class EventInterceptor:
+    def __init__(self):
+        self.uid = None
+
+    def __eq__(self, value: EventInterceptor) -> bool:
+        return self.uid == value.uid
+
     def intercept(self, wrapper: EventWrapper) -> None:
         pass

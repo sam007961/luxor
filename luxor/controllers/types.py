@@ -8,14 +8,14 @@ class Int(Var):
     def __init__(self, value: Numeric = 0, **kwargs) -> None:
         super(Int, self).__init__(**kwargs)
         self.event_prefix = self.name + '.int.'
-        self.obj = self.ctx.request_object()
-        self.obj['class'] = ('int', self.stack + '.int')
-        self.obj['label'] = self.name
+        self.__obj = self.ctx.request_object()
+        self.__obj['class'] = frozenset({'int', self.callstack + '.int'})
+        self.__obj['label'] = self.name
         self.sset(value)
-        self.auto_trigger('new', value)
+        self.trigger('new', value)
 
     def sget(self) -> int:
-        return self.obj.sget('value')
+        return self.__obj.sget('value')
 
     def sset(self, value: Numeric) -> (int, int):
         if type(value) == Int:
@@ -23,19 +23,19 @@ class Int(Var):
         else:
             new = int(value)
         old = self.sget()
-        self.obj['value'] = new
+        self.__obj['value'] = new
         return old, new
 
     def get(self) -> int:
-        value = self.obj['value']
-        self.auto_trigger('get', value)
+        value = self.__obj['value']
+        self.trigger('get', value)
         return value
 
     def set(self, value: Numeric) -> None:
         old, new = self.sset(value)
         if type(value) == float:
-            self.auto_trigger('cast_literal', value, new)
-        self.auto_trigger('set', old, new)
+            self.trigger('cast_literal', value, new)
+        self.trigger('set', old, new)
 
     @property
     def value(self) -> int:
@@ -50,31 +50,31 @@ class Int(Var):
         self.set(value)
 
     def trigger_new(self, value) -> None:
-        self.ctx.push_event(Event(self.event_prefix + 'new',
-                            source=self.obj, meta={
-                                'new.value': value
-                            }))
+        return Event(self.event_prefix + 'new',
+                     source=self.__obj, meta={
+                         'new.value': value
+                     })
 
-    def trigger_get(self, value) -> None:
-        self.ctx.push_event(Event(self.event_prefix + 'get',
-                            source=self.obj, meta={
-                                'get.value': value
-                            }))
+    def trigger_get(self, value) -> Event:
+        return Event(self.event_prefix + 'get',
+                     source=self.__obj, meta={
+                         'get.value': value
+                     })
 
     def trigger_set(self, old: int, new: int) -> None:
-        self.ctx.push_event(Event(self.event_prefix + 'set',
-                            source=self.obj, meta={
-                                'set.value.old': old,
-                                'set.value.new': new
-                            }))
+        return Event(self.event_prefix + 'set',
+                     source=self.__obj, meta={
+                         'set.value.old': old,
+                         'set.value.new': new
+                     })
 
     def trigger_cast_literal(self, old: float, new: int) -> None:
-        self.ctx.push_event(Event(self.event_prefix + 'literal.cast',
-                            source=self.obj, meta={
-                                'cast.value.type': type(old),
-                                'cast.value.old': old,
-                                'cast.value.new': new
-                            }))
+        return Event(self.event_prefix + 'literal.cast',
+                     source=self.__obj, meta={
+                         'cast.value.type': type(old),
+                         'cast.value.old': old,
+                         'cast.value.new': new
+                     })
 
 
 Numeric = Union[int, float, Int]

@@ -1,23 +1,24 @@
-from typing import List, Tuple
-from .events import Event, match, EventWrapper, EventInterceptor
-from .objects import Object
-from .treedict import TreeDict
+from typing import List, Any, Union, Type
+from threading import RLock
+from luxor.core.events import Event, match, EventWrapper, EventInterceptor
+from luxor.core.objects import Object
+from luxor.core.treedict import TreeDict
 
 
 class Context:
     def __init__(self) -> None:
-        self.__stack: List[Tuple[str, int]] = []
+        self.__lock: RLock = RLock()
         self.__events: List[Event] = []
         self.__interceptors: List[EventInterceptor] = []
 
         self.__objects: List[Object] = []
-        self.__uid_counter = 0
+        self.__n_obj: int = 0
+        self.__n_inter: int = 0
 
-        self.__properties = TreeDict()
+        self.__properties: TreeDict = TreeDict()
 
     def push_event(self, event: Event) -> None:
-        event.ctx = self
-        event.stack = self.stack
+        self.__lock.acquire()
         wrapper = self.__intercept(event)
         if not wrapper.canceled:
             for e in wrapper.prev_chain:
@@ -27,6 +28,7 @@ class Context:
             self.__events.append(wrapper.event)
             for e in wrapper.next_chain:
                 self.push_event(e)
+        self.__lock.release()
 
     def pop_event(self) -> Event:
         event = self.__events.pop(0)
@@ -42,15 +44,17 @@ class Context:
     def has_events(self) -> bool:
         return self.events_count > 0
 
-    def peek_event(self, index: int) -> Event:
-        return self.__events[index] if index < self.events_count else None
+    def peek_event(self, idx: int) -> Event:
+        return self.__events[idx] if idx < self.events_count else None
 
     def add_object(self, obj: Object) -> None:
+        self.__lock.acquire()
         obj.ctx = self
-        obj.uid = self.__uid_counter
+        obj.uid = self.__n_obj
         self.__objects.append(obj)
-        self.__uid_counter += 1
+        self.__n_obj += 1
         obj._trigger_new()
+        self.__lock.release()
 
     def peek_object(self, uid: int) -> Object:
         return next((obj for obj in self.__objects
@@ -61,25 +65,33 @@ class Context:
         self.add_object(obj)
         return obj
 
-    def push_stack(self, name: str) -> None:
-        if len(self.__stack) > 0 and self.__stack[-1][0] == name:
-            top_name, top_count = self.__stack[-1]
-            self.__stack[-1] = (top_name, top_count + 1)
-        else:
-            self.__stack.append((name, 0))
+    def add_interceptor(self, inter: [EventInterceptor, Type]):
+        self.__lock.acquire()
+        if not isinstance(inter, EventInterceptor):
+            inter = inter()
+        inter.uid = self.__n_inter
+        self.__n_inter += 1
+        self.__interceptors.append(inter)
+        self.__lock.release()
 
-    def pop_stack(self) -> None:
-        if len(self.__stack) == 0:
-            return
-        top_name, top_count = self.__stack[-1]
-        if top_count > 0:
-            self.__stack[-1] = (top_name, top_count - 1)
-        else:
-            self.__stack.pop()
+    def remove_interceptor(self, inter: Union[EventInterceptor, int]) -> None:
+        self.__interceptors.remove(inter)
 
-    @property
-    def stack(self) -> Tuple[str, ...]:
-        return tuple(s[0] + '[{}]'.format(s[1]) for s in self.__stack)
+    def __getitem__(self, name: str) -> Any:
+        return self.get(name)
+
+    def __setitem__(self, name: str, value: Any):
+        self.set(name, value)
+
+    def get(self, name: str) -> Any:
+        self.__lock.acquire()
+        return self.__properties[name]
+        self.__lock.release()
+
+    def set(self, name: str, value: Any) -> None:
+        self.__lock.acquire()
+        self.__properties[name] = value
+        self.__lock.release()
 
     def log(self, **kwargs):
         print(*[str(e) for e in self.__events
@@ -87,7 +99,9 @@ class Context:
               or not match(e, 'operation.*')], sep='\n')
 
     def __intercept(self, event: Event) -> EventWrapper:
-        wrapper = EventWrapper(event)
+        wrapper = EventWrapper(self, event)
+        if wrapper.match('operation.*'):
+            return wrapper
         for i in self.__interceptors:
             i.intercept(wrapper)
             if wrapper.canceled:

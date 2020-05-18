@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import List, Dict, Union, TYPE_CHECKING
-from .events import Event
+from luxor.core.events import Event
 if TYPE_CHECKING:
-    from .context import Context
+    from luxor.core.context import Context
 
 
 class Object:
@@ -37,18 +37,18 @@ class Object:
         return self.__children.pop(index)
 
     def __getitem__(self, name: str) -> EventSafe:
+        return self.get(name)
+
+    def __setitem__(self, name: str, value: EventSafe) -> None:
+        self.set(name, value)
+
+    def get(self, name: str) -> EventSafe:
         value = self.sget(name)
         self._trigger_getattr()
         return value
 
-    def __setitem__(self, name: str, value: EventSafe) -> None:
-        self._trigger_setattr(name, value)
-
-    def get(self, name: str) -> EventSafe:
-        return self[name]
-
     def set(self, name: str, value: EventSafe) -> None:
-        self[name] = value
+        self._trigger_setattr(name, value)
 
     def get_parent(self) -> Object:
         parent = self.sget_parent()
@@ -78,7 +78,7 @@ class Object:
         parent = self.sget_parent()
 
         def do_new(event: Event) -> None:
-            self.parent = parent
+            self.__parent = parent
             self.__attributes.clear()
             self.__children.clear()
 

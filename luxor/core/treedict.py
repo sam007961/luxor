@@ -24,14 +24,16 @@ class TreeDict:
         keys = _key.split('.')
         result = self.__data
         for key in keys:
-            result = result.get(key, {})
+            result = result.get(key)
+            if result is None:
+                return None
         return result
 
     def __place(self, _key: str, value: Any):
         keys = _key.split('.')
         target = self.__data
         for key in keys[:-1]:
-            if key not in target: 
+            if key not in target:
                 target[key] = {}
             target = target[key]
         target[keys[-1]] = value
