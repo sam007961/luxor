@@ -5,7 +5,7 @@ from luxor.controllers.expressions import Var
 
 
 class Int(Var):
-    def __init__(self, value: Numeric = 0, **kwargs) -> None:
+    def __init__(self, value: Number = 0, **kwargs) -> None:
         super(Int, self).__init__(**kwargs)
         self.event_prefix = self.name + '.int.'
         self.__obj = self.ctx.request_object()
@@ -17,7 +17,7 @@ class Int(Var):
     def sget(self) -> int:
         return self.__obj.sget('value')
 
-    def sset(self, value: Numeric) -> (int, int):
+    def sset(self, value: Number) -> (int, int):
         if type(value) == Int:
             new = value.get()
         else:
@@ -31,7 +31,7 @@ class Int(Var):
         self.trigger('get', value)
         return value
 
-    def set(self, value: Numeric) -> None:
+    def set(self, value: Number) -> None:
         old, new = self.sset(value)
         if type(value) == float:
             self.trigger('cast_literal', value, new)
@@ -46,7 +46,7 @@ class Int(Var):
         return self.get()
 
     @value.setter
-    def value(self, value: Numeric) -> None:
+    def value(self, value: Number) -> None:
         self.set(value)
 
     def trigger_new(self, value) -> None:
@@ -77,4 +77,4 @@ class Int(Var):
                      })
 
 
-Numeric = Union[int, float, Int]
+Number = Union[int, float, Int]

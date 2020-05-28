@@ -13,7 +13,12 @@ class Object:
         self.__attributes: Dict[str, EventSafe] = {}
         self.__children: List[Object] = []
         self.ctx = ctx
-        self.sset_parent(parent)
+        self.snew(parent)
+
+    def snew(self, parent: Object = None) -> None:
+            self.__parent = parent
+            self.__attributes.clear()
+            self.__children.clear()
 
     def sget(self, name: str) -> EventSafe:
         return self.__attributes.get(name)
@@ -77,37 +82,33 @@ class Object:
     def _trigger_new(self) -> None:
         parent = self.sget_parent()
 
-        def do_new(event: Event) -> None:
-            self.__parent = parent
-            self.__attributes.clear()
-            self.__children.clear()
-
-        self.ctx.push_event(Event('operation.new', source=self, action=do_new))
+        self.ctx.push_event(Event('operation.new', source=self,
+                            action=lambda: self.snew(parent)))
 
     def _trigger_getattr(self) -> None:
         self.ctx.push_event(Event('operation.attribute.get', source=self))
 
     def _trigger_setattr(self, name: str, new: EventSafe) -> None:
         self.ctx.push_event(Event('operation.attribute.set', source=self,
-                            action=lambda e: self.sset(name, new)))
+                            action=lambda: self.sset(name, new)))
 
     def _trigger_getparent(self) -> None:
         self.ctx.push_event(Event('operation.parent.get', source=self))
 
     def _trigger_setparent(self, new: Object) -> None:
         self.ctx.push_event(Event('operation.parent.set', source=self,
-                            action=lambda e: self.sset_parent(new)))
+                            action=lambda: self.sset_parent(new)))
 
     def _trigger_getchild(self, index: int, child: Object) -> None:
         self.ctx.push_event(Event('operation.child.get', source=self))
 
     def _trigger_insertchild(self, index: int, child: Object) -> None:
         self.ctx.push_event(Event('operation.child.insert', source=self,
-                            action=lambda e: self.sinsert_child(index, child)))
+                            action=lambda: self.sinsert_child(index, child)))
 
     def _trigger_removechild(self, index: int) -> None:
         self.ctx.push_event(Event('operation.child.remove', source=self,
-                            action=lambda e: self.sremove_child(index)))
+                            action=lambda: self.sremove_child(index)))
 
     def __str__(self):
         return '{ uid: ' + str(self.uid) + ' }'

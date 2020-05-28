@@ -8,11 +8,11 @@ if TYPE_CHECKING:
 
 class Event:
     def __init__(self, classes: Union[str, Set[str]], **kwargs) -> None:
-        self.classes = classes if type(classes) == set \
+        self.classes: Set[str] = classes if type(classes) == set \
             else {classes} if type(classes) == str else set(classes)
         self.source: Object = kwargs.get('source')
         self.meta: Dict[str, Any] = kwargs.get('meta', {})
-        self.action: Callable[[Event], None] = kwargs.get('action')
+        self.action: Callable = kwargs.get('action')
 
     def __str__(self):
         return str(self.source) + ' -> ( ' + \
@@ -52,9 +52,9 @@ class EventWrapper:
         if ext is not None:
             action = self.event.action
 
-            def extended_action(event: Event):
-                action(event)
-                ext(event)
+            def extended_action():
+                action()
+                ext()
             self.event.action = extended_action
 
     def override(self, **kwargs) -> None:
@@ -76,10 +76,10 @@ class EventWrapper:
 
 class EventInterceptor:
     def __init__(self):
-        self.uid = None
+        self.uid: int = None
 
-    def __eq__(self, value: EventInterceptor) -> bool:
-        return self.uid == value.uid
+    def __eq__(self, other: EventInterceptor) -> bool:
+        return self.uid == other.uid
 
     def intercept(self, wrapper: EventWrapper) -> None:
         pass

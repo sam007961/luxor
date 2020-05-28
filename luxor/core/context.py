@@ -1,4 +1,4 @@
-from typing import List, Any, Union, Type
+from typing import List, Any, Union, Type, Iterator
 from threading import RLock
 from luxor.core.events import Event, match, EventWrapper, EventInterceptor
 from luxor.core.objects import Object
@@ -10,6 +10,7 @@ class Context:
         self.__lock: RLock = RLock()
         self.__events: List[Event] = []
         self.__interceptors: List[EventInterceptor] = []
+        self.__closed = False
 
         self.__objects: List[Object] = []
         self.__n_obj: int = 0
@@ -18,23 +19,34 @@ class Context:
         self.__properties: TreeDict = TreeDict()
 
     def push_event(self, event: Event) -> None:
+        if self.closed:
+            return
         self.__lock.acquire()
         wrapper = self.__intercept(event)
         if not wrapper.canceled:
             for e in wrapper.prev_chain:
                 self.push_event(e)
             if wrapper.event.action is not None:
-                wrapper.event.action(wrapper.event)
+                wrapper.event.action()
             self.__events.append(wrapper.event)
             for e in wrapper.next_chain:
                 self.push_event(e)
         self.__lock.release()
 
     def pop_event(self) -> Event:
+        if not self.closed:
+            raise Exception('cannot pop events from open context.')
         event = self.__events.pop(0)
-        if event.action is not None and match(event, 'operation.*'):
-            event.action(event)
+        if event.action is not None:
+            event.action()
         return event
+
+    @property
+    def closed(self) -> bool:
+        return self.__closed
+
+    def close(self) -> None:
+        self.__closed = True
 
     @property
     def events_count(self) -> int:
@@ -44,8 +56,13 @@ class Context:
     def has_events(self) -> bool:
         return self.events_count > 0
 
-    def peek_event(self, idx: int) -> Event:
+    def event(self, idx: int) -> Event:
         return self.__events[idx] if idx < self.events_count else None
+
+    @property
+    def events(self) -> Iterator[Event]:
+        for e in self.__events:
+            yield e
 
     def add_object(self, obj: Object) -> None:
         self.__lock.acquire()
@@ -65,7 +82,11 @@ class Context:
         self.add_object(obj)
         return obj
 
-    def add_interceptor(self, inter: [EventInterceptor, Type]):
+    def reset_objects(self) -> None:
+        for obj in self.__objects:
+            obj.snew()
+
+    def add_interceptor(self, inter: Union[EventInterceptor, Type]):
         self.__lock.acquire()
         if not isinstance(inter, EventInterceptor):
             inter = inter()
@@ -74,7 +95,7 @@ class Context:
         self.__interceptors.append(inter)
         self.__lock.release()
 
-    def remove_interceptor(self, inter: Union[EventInterceptor, int]) -> None:
+    def remove_interceptor(self, inter: EventInterceptor) -> None:
         self.__interceptors.remove(inter)
 
     def __getitem__(self, name: str) -> Any:
@@ -100,8 +121,6 @@ class Context:
 
     def __intercept(self, event: Event) -> EventWrapper:
         wrapper = EventWrapper(self, event)
-        if wrapper.match('operation.*'):
-            return wrapper
         for i in self.__interceptors:
             i.intercept(wrapper)
             if wrapper.canceled:
