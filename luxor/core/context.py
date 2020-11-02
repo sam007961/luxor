@@ -10,7 +10,6 @@ class Context:
         self.__lock: RLock = RLock()
         self.__events: List[Event] = []
         self.__interceptors: List[EventInterceptor] = []
-        self.__closed = False
 
         self.__objects: List[Object] = []
         self.__n_obj: int = 0
@@ -19,8 +18,6 @@ class Context:
         self.__properties: TreeDict = TreeDict()
 
     def push_event(self, event: Event) -> None:
-        if self.closed:
-            return
         self.__lock.acquire()
         wrapper = self.__intercept(event)
         if not wrapper.canceled:
@@ -34,19 +31,10 @@ class Context:
         self.__lock.release()
 
     def pop_event(self) -> Event:
-        if not self.closed:
-            raise Exception('cannot pop events from open context.')
         event = self.__events.pop(0)
         if event.action is not None:
             event.action()
         return event
-
-    @property
-    def closed(self) -> bool:
-        return self.__closed
-
-    def close(self) -> None:
-        self.__closed = True
 
     @property
     def events_count(self) -> int:

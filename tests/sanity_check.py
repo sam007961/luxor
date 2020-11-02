@@ -34,7 +34,6 @@ ctx.log(show_operations=True)
 # for _ in range(7):
 #     ctx.pop_event()
 
-ctx.close()
 while ctx.has_events:
     ctx.pop_event()
 
